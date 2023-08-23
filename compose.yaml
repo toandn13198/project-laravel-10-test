@@ -1,0 +1,57 @@
+services:
+  laravel:
+    image: laravel-10
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    working_dir: /var/www/html
+    depends_on:
+      - mysql
+      - redis
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www/html
+    entrypoint: ./.docker/wait-for-it.sh mysql:3306 -t 60 -- bash ./.docker/laravel.sh
+  nginx:
+    image: nginx:latest
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./:/var/www/html
+      - ./.docker/nginx/conf.d:/etc/nginx/conf.d/
+    depends_on:
+      - laravel
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=laravel
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql-volume:/var/lib/mysql
+  phpmyadmin:
+    image: 'phpmyadmin'
+    environment: 
+      - PMA_HOST=mysql
+    ports:
+      - '8080:80'
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+  redis:
+    image: redis:7
+    ports: 
+      - '6379:6379'
+    volumes:
+      - redis-volume:/data
+volumes:
+  mysql-volume:
+  redis-volume:
+  
+
+
+
